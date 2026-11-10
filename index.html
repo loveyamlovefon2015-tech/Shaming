@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ภารกิจสมิงพระราม</title>
+<style>
+:root{
+  --ink:#382719;--red:#98452c;--gold:#bd8124;--green:#4c7652;
+  --paper:#fffdf7;--line:#e4ca91;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;padding:12px;color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:
+    radial-gradient(ellipse at 15% 5%,#fffdf4 0,transparent 35%),
+    linear-gradient(145deg,#fff3d8,#efd39a 60%,#f7e9c9);
+}
+header{text-align:center;margin:8px auto 14px}
+h1{color:#843c25;margin:4px;font-size:clamp(1.55rem,4vw,2.4rem)}
+button,input,select{font:inherit}
+button{
+  border:0;border-radius:11px;padding:9px 13px;margin:3px;
+  background:var(--red);color:white;font-weight:750;cursor:pointer;
+  box-shadow:0 3px 0 #67301f;
+}
+button:hover{filter:brightness(1.06)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.green{background:var(--green);box-shadow:0 3px 0 #35583a}
+button.gold{background:var(--gold);box-shadow:0 3px 0 #805915}
+button.light{background:#e8dcc3;color:var(--ink);box-shadow:0 3px 0 #c6b28e}
+.panel{
+  max-width:700px;margin:18px auto;padding:18px;
+  background:var(--paper);border:2px solid var(--line);border-radius:18px;
+  box-shadow:0 8px 24px #75491a18;
+}
+#setup[hidden],#game[hidden]{display:none}
+.names{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+label{display:block;font-weight:700;margin:9px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid #cbb98e;border-radius:9px;background:white}
+.help{color:#685842;font-size:.92rem;line-height:1.55}
+.row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
+.pill{
+  display:inline-block;padding:7px 11px;background:#fffdf5;
+  border:1px solid #e1c98f;border-radius:999px;font-weight:700;
+}
+#status{margin:10px auto}
+#players{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:8px;max-width:1100px;margin:10px auto;
+}
+.player{
+  background:#fffdf7;border:2px solid transparent;border-radius:14px;
+  padding:9px;line-height:1.45;box-shadow:0 3px 10px #68421912;
+}
+.player.active{border-color:#e3a73e;background:#fff4d5}
+.player svg{width:38px;height:44px;vertical-align:middle}
+#board{
+  width:min(96vw,920px);aspect-ratio:1;margin:12px auto;
+  display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);
+  gap:3px;padding:6px;border:4px solid #94603b;border-radius:20px;
+  background:linear-gradient(145deg,#e9d496,#d9bd77);
+  position:relative;box-shadow:0 9px 24px #67421d30;
+}
+.tile{
+  min-width:0;border:1px solid #d5c28f;border-radius:7px;background:#fffdf6;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:2px;font-size:clamp(.42rem,1vw,.68rem);
+  line-height:1.1;overflow:hidden;
+}
+.tile svg{width:clamp(17px,3.8vw,33px);height:clamp(17px,3.8vw,33px)}
+.tile.start{background:#ffe49e}
+.tile.question{background:#e2f0ff}
+.tile.event{background:#f1e4ff}
+.tile.city{background:#e6f1dc}
+.tile.tax{background:#ffe5d9}
+.tile.rest{background:#fff0c8}
+.owner{color:#26723c;font-weight:750;font-size:.88em}
+.house{color:#a4492d;font-weight:750}
+.pawns{font-size:1.05rem;min-height:1em}
+.center{
+  position:absolute;left:25%;top:25%;width:50%;height:50%;z-index:2;
+  border:2px solid #d7bc78;border-radius:17px;background:#fff9e9;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:7px;gap:4px;box-shadow:0 4px 12px #77542722;
+}
+.center svg{width:40px;height:47px}
+.die{font-size:clamp(2rem,7vw,4rem);line-height:1}
+.notice{font-weight:750;background:#fff0c7;padding:5px 8px;border-radius:8px}
+.actions{text-align:center;margin:10px}
+.modal{
+  position:fixed;inset:0;background:#20160dc9;display:none;
+  align-items:center;justify-content:center;padding:12px;z-index:5;
+}
+.modal.show{display:flex}
+.box{
+  max-width:700px;width:100%;max-height:90vh;overflow:auto;
+  background:#fffdf7;padding:19px;border:3px solid #e6ca8b;border-radius:18px;
+  box-shadow:0 12px 40px #0005;
+}
+.box h2{color:#843c25;margin:0 0 9px}
+.choice{display:block;width:100%;text-align:left;background:#557b56;margin:7px 0}
+.result{padding:10px;background:#f6edd8;border-radius:10px;margin:9px 0;line-height:1.5}
+.knowledge{line-height:1.6}
+.knowledge h3{color:#8b442a;margin:16px 0 4px}
+.knowledge ul{padding-left:22px}
+@media(max-width:560px){
+  body{padding:5px}
+  #board{gap:2px;padding:3px;border-width:2px}
+  .tile{border-radius:4px}
+  .center{gap:2px;padding:3px;font-size:.66rem}
+  .center button{font-size:.68rem;padding:5px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏇 ภารกิจสมิงพระราม</h1>
+  <div>เกมทบทวน <i>ราชาธิราช ตอน สมิงพระรามอาสา</i></div>
+  <div class="row">
+    <button class="light" onclick="showRules()">📘 วิธีเล่น</button>
+    <button class="light" onclick="showContent()">📚 คลังเนื้อหา</button>
+    <button class="light" onclick="showCharacters()">🎨 ตัวละคร</button>
+  </div>
+</header>
+
+<section id="setup" class="panel">
+  <h2>ตั้งค่าเกม</h2>
+  <label for="playerCount">จำนวนผู้เล่น</label>
+  <select id="playerCount">
+    <option value="2">2 คน</option><option value="3">3 คน</option>
+    <option value="4" selected>4 คน</option><option value="5">5 คน</option>
+  </select>
+  <div id="nameFields" class="names"></div>
+  <label for="roundLimit">จำนวนรอบต่อคน</label>
+  <select id="roundLimit">
+    <option value="8">8 รอบ</option><option value="12" selected>12 รอบ</option>
+    <option value="16">16 รอบ</option><option value="0">เล่นจนกดสรุป</option>
+  </select>
+  <p class="help">กรอกชื่อผู้เล่นทุกคนให้ครบก่อนเริ่มเกม ทุกคนเริ่มด้วย 100 เหรียญ</p>
+  <button onclick="startGame()">เริ่มเกม</button>
+</section>
+
+<section id="game" hidden>
+  <div id="status" class="row"></div>
+  <div id="players"></div>
+  <div id="board"></div>
+  <div class="actions">
+    <button class="gold" onclick="finishGame()">🏆 สรุปคะแนน</button>
+    <button class="light" onclick="newGame()">เริ่มเกมใหม่</button>
+  </div>
+  <p class="help" style="text-align:center">
+    ทอยลูกเต๋า ดูแต้ม แล้วเดินหมากจริงตามจำนวนช่องก่อนกด “เดินเสร็จแล้ว”
+  </p>
+</section>
+
+<div id="modal" class="modal" role="dialog" aria-modal="true">
+  <div id="modalBox" class="box"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ภาพวาด SVG สีสันสดใสที่ฝังในไฟล์ ไม่ใช้ภาพจากเว็บหรือภาพมีลิขสิทธิ์ */
+function art(kind){
+  const palette={
+    sam:["#b94e42","#52332c","#f2c56b"],
+    kamani:["#527b99","#273d52","#e8c15e"],
+    king:["#c69024","#65401e","#ffe59b"],
+    china:["#a83b37","#55242d","#f5d274"],
+    envoy:["#64784c","#37432e","#e8cc7c"],
+    horse:["#b77948","#563727","#e4bd70"],
+    scroll:["#e5c779","#78502e","#fff1c7"],
+    camp:["#b96e48","#633b2c","#e9c66d"],
+    battle:["#9d563b","#633b2c","#e2bb64"],
+    city:["#c98745","#754527","#f5e4b7"]
+  };
+  const p=palette[kind]||palette.city;
+
+  if(["sam","kamani","king","china","envoy"].includes(kind)){
+    const headgear=["king","china"].includes(kind)
+      ? `<path d="M32 35 37 16 49 27 61 15 68 35Z"
+          fill="${p[2]}" stroke="${p[1]}" stroke-width="2.5"/>
+         <circle cx="49" cy="19" r="3" fill="#fff9d6"/>
+         <path d="M35 34H65" stroke="#fff1ba" stroke-width="2"/>`
+      : kind==="envoy"
+      ? `<path d="M27 33Q49 22 72 33L67 38H31Z"
+          fill="${p[1]}" stroke="#34291f" stroke-width="2.5"/>
+         <path d="M34 31Q49 9 65 31" fill="${p[2]}"
+          stroke="${p[1]}" stroke-width="2.5"/>`
+      : `<path d="M29 36Q27 12 49 11Q72 13 70 36
+          Q61 28 50 24Q41 33 29 36Z"
+          fill="${p[1]}" stroke="#3b2923" stroke-width="2.5"/>
+         <path d="M34 31Q49 23 65 31" fill="none"
+          stroke="${p[2]}" stroke-width="3"/>`;
+
+    const weapon=kind==="sam"
+      ? `<path d="M76 84 90 28" stroke="#714b2d" stroke-width="4"
+          stroke-linecap="round"/>
+         <path d="m87 34 8-13" stroke="#f0e2bd" stroke-width="3"/>
+         <path d="M72 65 80 68" stroke="${p[2]}" stroke-width="4"/>`
+      : kind==="kamani"
+      ? `<path d="M18 60 10 32" stroke="#714b2d" stroke-width="4"
+          stroke-linecap="round"/>
+         <path d="m7 34 7-11 7 12" fill="${p[2]}"
+          stroke="#714b2d" stroke-width="2"/>`
+      : "";
+
+    const armor=kind==="kamani"
+      ? `<path d="M31 70 49 83 68 70M35 77H64M38 84H61"
+          fill="none" stroke="${p[2]}" stroke-width="2.5"/>
+         <circle cx="40" cy="76" r="1.5" fill="#fff0bd"/>
+         <circle cx="49" cy="80" r="1.5" fill="#fff0bd"/>
+         <circle cx="58" cy="76" r="1.5" fill="#fff0bd"/>`
+      : "";
+
+    return `<svg viewBox="0 0 100 110" role="img" aria-label="ภาพประกอบตัวละคร">
+      <circle cx="50" cy="55" r="47" fill="#f7e8c6" stroke="${p[2]}" stroke-width="3"/>
+      <path d="M12 82Q25 72 36 79T58 78Q76 70 88 82"
+        fill="none" stroke="#a8ad72" stroke-width="4"/>
+      <circle cx="21" cy="24" r="2" fill="#fff9df"/>
+      <circle cx="77" cy="23" r="2.5" fill="#fff9df"/>
+      <path d="M23 106Q25 67 49 65Q75 67 77 106Z"
+        fill="${p[0]}" stroke="${p[1]}" stroke-width="2.5"/>
+      <path d="M35 68 49 87 64 68" fill="#fff0c8" stroke="${p[1]}" stroke-width="2"/>
+      <path d="M49 86V105" stroke="${p[2]}" stroke-width="3"/>
+      <path d="M31 91H68" stroke="${p[2]}" stroke-width="3"/>
+      <circle cx="50" cy="47" r="19" fill="#d99d72" stroke="#573c2b" stroke-width="2"/>
+      ${headgear}
+      <path d="M33 44Q39 40 44 44M55 44Q61 40 66 44"
+        fill="none" stroke="${p[1]}" stroke-width="2"/>
+      <ellipse cx="41" cy="49" rx="2" ry="2.5" fill="#261b15"/>
+      <ellipse cx="57" cy="49" rx="2" ry="2.5" fill="#261b15"/>
+      <path d="M44 59Q49 63 55 59" fill="none" stroke="#8e4439"
+        stroke-width="2" stroke-linecap="round"/>
+      <path d="M34 74 20 86M65 74 79 86" stroke="#d99d72"
+        stroke-width="7" stroke-linecap="round"/>
+      ${armor}${weapon}
+    </svg>`;
+  }
+
+  if(kind==="horse")return `<svg viewBox="0 0 100 80" role="img" aria-label="ม้าศึก">
+    <circle cx="50" cy="40" r="36" fill="#f3e4c3" stroke="#d6ad56" stroke-width="3"/>
+    <path d="M15 54Q19 31 48 34L62 21 75 25 68 38Q84 47 76 59L67 57
+      62 74H57L58 57 39 59 34 74H29L30 56Z"
+      fill="#b77948" stroke="#563727" stroke-width="3"/>
+    <path d="M63 27 78 17 85 23 73 35" fill="#b77948" stroke="#563727" stroke-width="3"/>
+    <circle cx="76" cy="28" r="2" fill="#24180f"/>
+    <path d="M22 39Q10 30 14 21M42 35Q34 25 38 18"
+      fill="none" stroke="#543326" stroke-width="4"/>
+    <path d="M40 42 64 43M47 48 69 49" stroke="#e4bd70" stroke-width="3"/>
+  </svg>`;
+
+  if(kind==="scroll")return `<svg viewBox="0 0 100 80" role="img" aria-label="ม้วนเอกสาร">
+    <circle cx="50" cy="40" r="36" fill="#f2e5c7" stroke="#d4ab58" stroke-width="3"/>
+    <path d="M24 18Q16 12 20 8Q24 4 31 10H73Q83 10 80 19V62Q77 69 69 65H28Q18 68 19 59Z"
+      fill="#fff1c7" stroke="#78502e" stroke-width="3"/>
+    <path d="M32 25H68M32 35H67M32 45H62M32 55H56"
+      stroke="#9d6835" stroke-width="3" stroke-linecap="round"/>
+    <path d="M69 18V32L75 28 81 32V18Z" fill="#bd4937" stroke="#783526" stroke-width="2"/>
+    <circle cx="75" cy="20" r="2" fill="#ffdf91"/>
+  </svg>`;
+
+  if(kind==="camp")return `<svg viewBox="0 0 100 80" role="img" aria-label="ค่ายพักกองทัพ">
+    <circle cx="50" cy="40" r="36" fill="#e9e5c8" stroke="#d2a653" stroke-width="3"/>
+    <path d="M13 64 49 14 87 64Z" fill="#b96e48" stroke="#633b2c" stroke-width="3"/>
+    <path d="M39 64 50 40 62 64" fill="#f5e4b7" stroke="#633b2c" stroke-width="2"/>
+    <path d="M8 67H92" stroke="#65422e" stroke-width="3"/>
+    <path d="M25 29 49 14 73 29" fill="none" stroke="#e9c66d" stroke-width="3"/>
+    <circle cx="22" cy="59" r="3" fill="#e8aa46"/><circle cx="79" cy="58" r="3" fill="#e8aa46"/>
+  </svg>`;
+
+  if(kind==="battle")return `<svg viewBox="0 0 100 80" role="img" aria-label="สนามประลอง">
+    <circle cx="50" cy="40" r="36" fill="#f3e4bf" stroke="#d2a653" stroke-width="3"/>
+    <path d="M16 62Q50 14 84 62" fill="none" stroke="#9d563b" stroke-width="8"/>
+    <path d="M13 66H87M24 56V68M76 56V68" stroke="#633b2c" stroke-width="3"/>
+    <path d="M34 49 65 20M36 20 67 50" stroke="#62442d" stroke-width="4"/>
+    <path d="m64 18 8-5-3 10M32 18l-7-5 2 10" fill="#e2bb64"/>
+    <circle cx="50" cy="44" r="5" fill="#d3a447"/>
+  </svg>`;
+
+  return `<svg viewBox="0 0 100 80" role="img" aria-label="เมืองโบราณ">
+    <circle cx="50" cy="40" r="36" fill="#f8e9c4" stroke="#d2a653" stroke-width="3"/>
+    <path d="M10 65V38L24 28 38 38V65M32 65V25L50 12 68 25V65M62 65V38L76 28 90 38V65Z"
+      fill="#c98745" stroke="#754527" stroke-width="3"/>
+    <path d="M43 65V47Q50 37 57 47V65M17 45H30M70 45H83"
+      fill="#f5e4b7" stroke="#754527" stroke-width="2"/>
+    <path d="M6 68H94" stroke="#74502f" stroke-width="3"/>
+    <path d="M50 12V5M46 8H54" stroke="#9e4b35" stroke-width="3"/>
+    <circle cx="22" cy="34" r="2" fill="#ffe8a6"/><circle cx="78" cy="34" r="2" fill="#ffe8a6"/>
+  </svg>`;
+}
+
+/* กระดาน 36 ช่อง */
+const spaces=[
+  {n:"จุดเริ่มต้น",t:"start",a:"city"},
+  {n:"คำถาม: ที่มา",t:"question",a:"scroll"},
+  {n:"กรุงจีน",t:"city",a:"city",price:70,tax:14,hp:25,houseTax:4},
+  {n:"การ์ดเหตุการณ์",t:"event",a:"scroll"},
+  {n:"คำถาม: ตัวละคร",t:"question",a:"sam"},
+  {n:"ด่านโจเปียว",t:"city",a:"city",price:55,tax:11,hp:20,houseTax:3},
+  {n:"ภาษีเดินทาง",t:"tax",a:"scroll",amount:12},
+  {n:"คำถาม: ลำดับเรื่อง",t:"question",a:"scroll"},
+  {n:"กรุงหงสาวดี",t:"city",a:"city",price:85,tax:17,hp:30,houseTax:5},
+  {n:"โบนัสภารกิจ",t:"event",a:"horse"},
+  {n:"คำถาม: กลยุทธ์",t:"question",a:"sam"},
+  {n:"คอกม้าฝีเท้าดี",t:"city",a:"horse",price:60,tax:12,hp:22,houseTax:3},
+  {n:"พักทัพ",t:"rest",a:"camp"},
+  {n:"คำถาม: คุณค่า",t:"question",a:"scroll"},
+  {n:"กรุงรัตนปุระอังวะ",t:"city",a:"city",price:90,tax:18,hp:32,houseTax:5},
+  {n:"การ์ดเหตุการณ์",t:"event",a:"battle"},
+  {n:"คำถาม: วรรณศิลป์",t:"question",a:"scroll"},
+  {n:"สนามประลอง",t:"city",a:"battle",price:75,tax:15,hp:28,houseTax:4},
+  {n:"ค่าซ่อมอุปกรณ์",t:"tax",a:"battle",amount:15},
+  {n:"คำถาม: ข้อคิด",t:"question",a:"sam"},
+  {n:"ค่ายทหาร",t:"city",a:"camp",price:65,tax:13,hp:24,houseTax:4},
+  {n:"โบนัสพิเศษ",t:"event",a:"scroll"},
+  {n:"คำถาม: ผู้เรียบเรียง",t:"question",a:"king"},
+  {n:"หอวรรณคดี",t:"city",a:"scroll",price:60,tax:12,hp:22,houseTax:3},
+  {n:"พักทัพ",t:"rest",a:"camp"},
+  {n:"คำถาม: สังคม",t:"question",a:"king"},
+  {n:"ประตูเมือง",t:"city",a:"city",price:70,tax:14,hp:25,houseTax:4},
+  {n:"การ์ดเหตุการณ์",t:"event",a:"horse"},
+  {n:"ภาษีราชสำนัก",t:"tax",a:"king",amount:18},
+  {n:"คำถาม: คำศัพท์",t:"question",a:"scroll"},
+  {n:"ลานฝึกทวน",t:"city",a:"battle",price:75,tax:15,hp:28,houseTax:4},
+  {n:"การ์ดภารกิจ",t:"event",a:"camp"},
+  {n:"คำถาม: คุณธรรม",t:"question",a:"king"},
+  {n:"ที่พักกองทัพ",t:"city",a:"camp",price:55,tax:11,hp:20,houseTax:3},
+  {n:"พักทัพ",t:"rest",a:"camp"},
+  {n:"คำถาม: สรุปเรื่อง",t:"question",a:"scroll"}
+];
+
+const questions=[
+  {q:"ราชาธิราชมีต้นกำเนิดจากพงศาวดารของชนชาติใด?",a:["มอญ","ไทย","จีน","เขมร"],c:0,e:"มีต้นกำเนิดจากพงศาวดารมอญ"},
+  {q:"ต้นฉบับเดิมของราชาธิราชเป็นภาษาใด?",a:["มอญ","ไทย","จีน","พม่า"],c:0,e:"ต้นฉบับเดิมเป็นภาษามอญ"},
+  {q:"ใครเป็นผู้เรียบเรียงสำคัญฉบับภาษาไทย?",a:["เจ้าพระยาพระคลัง (หน)","โจเปียว","กามะนี","สมิงพระราม"],c:0,e:"เจ้าพระยาพระคลัง (หน) เป็นผู้เรียบเรียงสำคัญ"},
+  {q:"รัชกาลใดโปรดเกล้าฯ ให้แปลและเรียบเรียงเรื่องนี้ให้สมบูรณ์?",a:["รัชกาลที่ 1","รัชกาลที่ 5","รัชกาลที่ 4","รัชกาลที่ 7"],c:0,e:"รัชกาลที่ 1 โปรดเกล้าฯ ให้แปลและเรียบเรียง"},
+  {q:"เจ้าพระยาพระคลัง (หน) เริ่มรับราชการตำแหน่งใด?",a:["หลวงสรวิชิต","มหาอุปราช","โจเปียว","พระยาพิพัฒน์โกษา"],c:0,e:"ตำแหน่งแรกตามข้อมูลคือหลวงสรวิชิต"},
+  {q:"ท่านถึงแก่อสัญกรรมใน พ.ศ. ใดตามข้อมูลที่ได้รับ?",a:["2348","2325","2310","2400"],c:0,e:"ข้อมูลที่ได้รับระบุ พ.ศ. 2348"},
+  {q:"ตอนสมิงพระรามอาสาแต่งด้วยคำประพันธ์ใด?",a:["ร้อยแก้ว","โคลง","กาพย์","ฉันท์"],c:0,e:"แต่งด้วยร้อยแก้ว ไม่บังคับฉันทลักษณ์"},
+  {q:"ข้อใดเป็นผลงานเจ้าพระยาพระคลัง (หน)?",a:["สามก๊ก","พระอภัยมณี","ขุนช้างขุนแผน","อิเหนาคำกลอน"],c:0,e:"สามก๊กเป็นผลงานที่ระบุในเอกสาร"},
+  {q:"กามะนีเป็นทหารเอกของใคร?",a:["พระเจ้ากรุงต้าฉิง","พระเจ้าฝรั่งมังฆ้อง","พระเจ้าราชาธิราช","สมิงพระราม"],c:0,e:"กามะนีเป็นทหารเอกฝ่ายจีน"},
+  {q:"โจเปียวทำหน้าที่ใด?",a:["ทูตนำพระราชสาส์น","นักรบมอญ","ผู้เลือกม้า","กษัตริย์"],c:0,e:"โจเปียวเป็นทูตและผู้ประสานงาน"},
+  {q:"หากอังวะแพ้การประลองจะเกิดอะไรขึ้น?",a:["ต้องยกเมืองให้จีน","จีนยกเมืองให้อังวะ","ทั้งสองฝ่ายกลับบ้าน","ไม่มีผล"],c:0,e:"ข้อตกลงระบุว่าอังวะต้องยกเมืองให้จีน"},
+  {q:"หากอังวะชนะ ฝ่ายจีนต้องทำอย่างไร?",a:["ถอนทัพกลับ","ยึดเมือง","ยกทัพไปหงสาวดี","เปลี่ยนข้อตกลง"],c:0,e:"พระเจ้ากรุงต้าฉิงทรงสัญญาว่าจะถอนทัพ"},
+  {q:"“หาบสองบ่า อาสาสองเจ้า” สื่อถึงอะไร?",a:["ลำบากใจเพราะผูกพันสองฝ่าย","แบกของหนัก","เดินทางสองเมือง","เป็นทูต"],c:0,e:"สื่อถึงความลำบากใจของสมิงพระรามที่ผูกพันต่อสองฝ่าย"},
+  {q:"เหตุใดสมิงพระรามจึงรับอาสา?",a:["เกรงว่าจีนจะยกทัพไปหงสาวดี","ต้องการทรัพย์สิน","อยากเป็นทูต","กลัวผู้คุม"],c:0,e:"เขาห่วงภัยที่จะเกิดกับบ้านเกิดของตน"},
+  {q:"สมิงพระรามขอม้าฝีเท้าดีเพื่ออะไร?",a:["ใช้ประลองและต้องการม้าที่แข็งแรง","ขายม้า","เดินทางไปจีน","ม้าเป็นรางวัล"],c:0,e:"ม้าเป็นส่วนสำคัญของการประลอง"},
+  {q:"สมิงพระรามสังเกตจุดอ่อนเกราะกามะนีเมื่อใด?",a:["ขณะรำทวน","ขณะรับประทานอาหาร","จากโจเปียว","หลังจบการต่อสู้"],c:0,e:"เขาสังเกตคู่ต่อสู้ระหว่างรำทวน"},
+  {q:"เหตุใดสมิงพระรามจึงแสร้งหนี?",a:["ล่อให้ม้ากามะนีเหนื่อย","ยอมแพ้","ออกจากสนามถาวร","ไปตามทหาร"],c:0,e:"เป็นกลยุทธ์ทำให้ม้าคู่ต่อสู้อ่อนแรง"},
+  {q:"เมื่อจีนแพ้ พระเจ้ากรุงต้าฉิงทรงทำอย่างไร?",a:["รักษาสัญญาและถอนทัพ","ยกทัพแก้แค้น","ยึดอังวะ","จับสมิงพระราม"],c:0,e:"ทรงรักษาคำมั่นและนำกองทัพกลับ"},
+  {q:"สมิงพระรามเป็นเชลยอยู่ที่ใด?",a:["กรุงรัตนปุระอังวะ","กรุงจีน","กรุงหงสาวดี","อยุธยา"],c:0,e:"ถูกจองจำอยู่ในกรุงรัตนปุระอังวะ"},
+  {q:"อาวุธหลักในการประลองคืออะไร?",a:["ทวน","ธนู","ปืน","โล่"],c:0,e:"ทวนเป็นอาวุธสำคัญในการประลอง"},
+  {q:"กามะนีสวมสิ่งใดป้องกันร่างกาย?",a:["ชุดเกราะ","เสื้อชมพูขลิบทอง","ชุดทูต","เครื่องราชบรรณาการ"],c:0,e:"กามะนีสวมชุดเกราะ"},
+  {q:"ข้อความ “เรารักสัตย์ยิ่งกว่าทรัพย์...” สื่อข้อคิดใด?",a:["รักษาคำพูดมีค่ากว่าทรัพย์สิน","ทรัพย์สำคัญกว่าคำพูด","ไม่ควรมีทรัพย์","หลีกเลี่ยงสัญญา"],c:0,e:"เป็นข้อความยกย่องการรักษาสัจจะ"},
+  {q:"การเปรียบกองทัพกับฝนหนักและน้ำเชี่ยวเป็นภาพพจน์ใด?",a:["อุปมา","บุคลาธิษฐาน","สัทพจน์","นามนัย"],c:0,e:"เป็นการเปรียบเทียบเพื่อให้เห็นภาพ"},
+  {q:"“สัจจะ” หมายถึงอะไร?",a:["ความจริงและการรักษาคำพูด","การวางแผน","การต่อสู้","การเดินทาง"],c:0,e:"สัจจะหมายถึงความจริงและการรักษาคำพูด"},
+  {q:"ข้อคิดสำคัญจากเรื่องคืออะไร?",a:["ใช้สติปัญญาและความรอบคอบควบคู่ความสามารถ","ใช้กำลังอย่างเดียว","หลีกเลี่ยงหน้าที่","ไม่ต้องรักษาคำพูด"],c:0,e:"เรื่องเน้นความสามารถ ไหวพริบ และความรอบคอบ"}
+];
+
+const eventCards=[
+  {text:"ทำภารกิจสำเร็จ รับโบนัส 15 เหรียญ",money:15},
+  {text:"ได้รับรางวัลจากการช่วยบ้านเมือง รับ 20 เหรียญ",money:20},
+  {text:"เตรียมม้าดี รับเงินสนับสนุน 12 เหรียญ",money:12},
+  {text:"ได้รับเงินสนับสนุนจากราชสำนัก 16 เหรียญ",money:16},
+  {text:"เสียค่าดูแลม้าและอุปกรณ์ 12 เหรียญ",money:-12},
+  {text:"จ่ายภาษีเดินทาง 15 เหรียญ",money:-15},
+  {text:"จ่ายค่าซ่อมอุปกรณ์ 18 เหรียญ",money:-18},
+  {text:"จ่ายค่าจัดเตรียมเสบียง 10 เหรียญ",money:-10},
+  {text:"บัตรคุ้มครองภาษี: ยกเว้นภาษีครั้งหน้า",shield:true},
+  {text:"พักกองทัพ: ข้ามตาถัดไปจริง",skip:true},
+  {text:"ช่วยประสานงาน รับโบนัส 10 เหรียญ",money:10},
+  {text:"ภารกิจล่าช้า: ข้ามตาถัดไปจริง",skip:true}
+];
+
+const boardCoords=[];
+for(let c=0;c<10;c++)boardCoords.push([0,c]);
+for(let r=1;r<10;r++)boardCoords.push([r,9]);
+for(let c=8;c>=0;c--)boardCoords.push([9,c]);
+for(let r=8;r>=1;r--)boardCoords.push([r,0]);
+
+let players=[],current=0,properties={},rolled=false,resolved=false;
+let turnsTaken=0,roundLimit=12,lastRoll=0,pendingPosition=null;
+let passedStartPending=false,questionDeck=[],eventDeck=[],activeQuestion=null;
+const $=id=>document.getElementById(id);
+
+$("playerCount").addEventListener("change",makeNameFields);
+makeNameFields();
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function shuffle(a){
+  a=[...a];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function makeNameFields(){
+  $("nameFields").innerHTML="";
+  for(let i=0;i<+$("playerCount").value;i++){
+    $("nameFields").insertAdjacentHTML("beforeend",
+      `<div><label for="playerName${i}">ชื่อผู้เล่น ${i+1} (จำเป็น)</label>
+      <input id="playerName${i}" required maxlength="20" placeholder="กรอกชื่อ"></div>`);
+  }
+}
+function startGame(){
+  const names=[];
+  for(let i=0;i<+$("playerCount").value;i++){
+    const field=$("playerName"+i),name=field.value.trim();
+    if(!name){field.focus();alert("กรุณากรอกชื่อผู้เล่นทุกคนก่อนเริ่มเกม");return}
+    names.push(name);
+  }
+  players=names.map((name,i)=>({
+    name,money:100,score:0,pos:0,token:["🔴","🔵","🟢","🟣","🟠"][i],
+    completedTurns:0,skipTurns:0,skipActive:false,shield:0
+  }));
+  current=0;properties={};rolled=false;resolved=false;turnsTaken=0;
+  roundLimit=+$("roundLimit").value;lastRoll=0;pendingPosition=null;
+  passedStartPending=false;
+  questionDeck=shuffle(questions.map((_,i)=>i));
+  eventDeck=shuffle(eventCards.map((_,i)=>i));
+  $("setup").hidden=true;$("game").hidden=false;render();
+  message("เริ่มเกม 🏇","ทุกคนเริ่มด้วย 100 เหรียญ ตาแรกห้ามซื้อที่ดินและบ้าน");
+}
+function render(){
+  const round=Math.floor(turnsTaken/players.length)+1;
+  $("status").innerHTML=`<span class="pill">รอบ ${round}${roundLimit?` / ${roundLimit}`:""}</span><span class="pill">กระดาน 36 ช่อง</span><span class="pill">ผู้เล่น ${players.length} คน</span>`;
+
+  $("players").innerHTML=players.map((p,i)=>{
+    const owned=Object.values(properties).filter(x=>x.owner===i);
+    const houses=owned.reduce((sum,x)=>sum+x.houses,0);
+    return `<div class="player ${i===current?"active":""}">
+      ${art(["sam","kamani","king","china","envoy"][i])}
+      <b>${p.token} ${esc(p.name)} ${i===current?"◀ ถึงตา":""}</b><br>
+      💰 ${p.money} เหรียญ　⭐ ${p.score} คะแนน<br>
+      🏙️ ${owned.length} เมือง　🏠 ${houses} บ้าน
+      ${p.shield?"<br>🛡️ บัตรยกเว้นภาษี":""}
+    </div>`;
+  }).join("");
+
+  const board=$("board");board.innerHTML="";
+  for(let r=0;r<10;r++)for(let c=0;c<10;c++){
+    const index=boardCoords.findIndex(x=>x[0]===r&&x[1]===c);
+    const cell=document.createElement("div");
+    if(index<0){cell.style.visibility="hidden";board.appendChild(cell);continue}
+    const s=spaces[index],prop=properties[index];
+    const tokens=players.filter(p=>p.pos===index).map(p=>p.token).join("");
+    const currentTax=s.tax+(prop?prop.houses*s.houseTax:0);
+    cell.className=`tile ${s.t}`;
+    cell.innerHTML=`${art(s.a)}<b>${esc(s.n)}</b>
+      ${s.price?`<span>ที่ดิน ${s.price}🪙</span><span>ภาษี ${currentTax}🪙</span>`:""}
+      ${prop?`<span class="owner">${esc(players[prop.owner].name)}</span>
+      ${prop.houses?`<span class="house">🏠 ×${prop.houses}</span>`:""}
+      <span>บ้านหลังละ ${s.hp}🪙</span>`:""}
+      <span class="pawns">${tokens}</span>`;
+    board.appendChild(cell);
+  }
+
+  const p=players[current],center=document.createElement("div");
+  center.className="center";
+  const moveNotice=rolled&&!resolved&&pendingPosition!==null
+    ? `<div class="notice">ทอยได้ ${lastRoll} แต้ม — เดิน ${lastRoll} ช่อง</div>
+       <div>ปลายทาง: <b>${esc(spaces[pendingPosition].n)}</b></div>
+       <small>เดินหมากจริงตามแต้ม แล้วกดยืนยัน</small>`:"";
+  center.innerHTML=`${art(["sam","kamani","king","china","envoy"][current])}
+    <b>ถึงตา ${esc(p.name)}</b>
+    <div>💰 ${p.money} เหรียญ　⭐ ${p.score}</div>
+    <div class="die">${lastRoll?["","⚀","⚁","⚂","⚃","⚄","⚅"][lastRoll]:"🎲"}</div>
+    ${moveNotice}
+    ${p.skipActive?'<div class="notice">พักตานี้จริง — ห้ามทอยและเดิน</div>':""}
+    <div class="row">
+      <button onclick="rollDice()" ${rolled||resolved||p.skipActive?"disabled":""}>ทอยลูกเต๋า</button>
+      ${rolled&&!resolved?'<button class="gold" onclick="confirmMove()">เดินเสร็จแล้ว</button>':""}
+      <button class="green" onclick="endTurn()" ${!resolved?"disabled":""}>${p.skipActive?"ยืนยันข้ามตา":"จบตา →"}</button>
+    </div>`;
+  board.appendChild(center);
+}
+function rollDice(){
+  if(rolled||resolved||players[current].skipActive)return;
+  rolled=true;lastRoll=1+Math.floor(Math.random()*6);
+  const target=players[current].pos+lastRoll;
+  pendingPosition=target%spaces.length;
+  passedStartPending=target>=spaces.length;
+  render();
+}
+function confirmMove(){
+  if(pendingPosition===null)return;
+  players[current].pos=pendingPosition;
+  if(passedStartPending)players[current].money+=20;
+  pendingPosition=null;passedStartPending=false;
+  render();resolveSpace();
+}
+function isFirstTurn(){return players[current].completedTurns===0}
+function resolveSpace(){
+  const index=players[current].pos,s=spaces[index];
+  if(s.t==="question"){drawQuestion();return}
+  if(s.t==="event"){drawEvent();return}
+  if(s.t==="city"){cityAction(index);return}
+  if(s.t==="tax"){payTax(s.amount,s.n);return}
+  if(s.t==="rest"){
+    players[current].money+=5;resolved=true;render();
+    message("พักทัพ","รับโบนัส 5 เหรียญ");return;
+  }
+  resolved=true;render();message("จุดเริ่มต้น","รับโบนัสเมื่อผ่านจุดเริ่มต้น");
+}
+function cityAction(index){
+  const s=spaces[index],prop=properties[index],p=players[current];
+  if(!prop){
+    if(isFirstTurn()){
+      resolved=true;render();
+      message("ตาแรกห้ามซื้อที่ดิน","เริ่มซื้อที่ดินและบ้านได้ตั้งแต่ตาถัดไป");
+      return;
+    }
+    show(`<h2>${art(s.a)} ${esc(s.n)}</h2>
+      <p>ที่ดินว่าง ราคา <b>${s.price} เหรียญ</b> · ภาษีพื้นฐาน ${s.tax} เหรียญ</p>
+      <button onclick="buyCity(${index})" ${p.money<s.price?"disabled":""}>ซื้อที่ดิน</button>
+      <button class="light" onclick="skipPurchase()">ไม่ซื้อ</button>`);
+    return;
+  }
+  if(prop.owner!==current){
+    const tax=s.tax+prop.houses*s.houseTax;
+    if(p.shield){
+      p.shield--;resolved=true;render();
+      message("บัตรยกเว้นภาษี",`ไม่ต้องจ่ายภาษีเมือง ${s.n} ครั้งนี้`);
+      return;
+    }
+    const paid=Math.min(tax,p.money);
+    p.money-=paid;players[prop.owner].money+=paid;
+    resolved=true;render();
+    message("จ่ายภาษีเมือง",`${p.name} จ่าย ${paid} เหรียญให้เจ้าของ ${players[prop.owner].name}`);
+    return;
+  }
+  if(isFirstTurn()){
+    resolved=true;render();
+    message("ตาแรกยังสร้างบ้านไม่ได้","เริ่มซื้อบ้านได้ตั้งแต่ตาถัดไป");
+    return;
+  }
+  const available=Math.min(5-prop.houses,Math.floor(p.money/s.hp));
+  if(available<=0){
+    resolved=true;render();
+    message("ซื้อบ้านไม่ได้","เงินไม่พอ หรือที่ดินนี้มีบ้านครบ 5 หลังแล้ว");
+    return;
+  }
+  show(`<h2>${art(s.a)} ${esc(s.n)}</h2>
+    <p>บ้านราคา ${s.hp} เหรียญต่อหลัง · เพิ่มภาษี ${s.houseTax} เหรียญต่อหลัง</p>
+    <label for="houseCount">เลือกจำนวนบ้าน (สูงสุด ${available} หลัง)</label>
+    <select id="houseCount">${Array.from({length:available},(_,i)=>
+      `<option value="${i+1}">${i+1} หลัง — ${(i+1)*s.hp} เหรียญ</option>`).join("")}</select>
+    <button onclick="buyHouses(${index})">ซื้อบ้านที่เลือก</button>
+    <button class="light" onclick="skipPurchase()">ยังไม่ซื้อบ้าน</button>`);
+}
+function buyCity(index){
+  const s=spaces[index],p=players[current];
+  if(isFirstTurn()||properties[index]||p.money<s.price)return;
+  p.money-=s.price;properties[index]={owner:current,houses:0};
+  closeModal();resolved=true;render();
+  message("ซื้อที่ดินสำเร็จ",`ซื้อ ${s.n} แล้ว ระบบหัก ${s.price} เหรียญและบันทึกเจ้าของให้`);
+}
+function buyHouses(index){
+  const s=spaces[index],p=players[current],prop=properties[index];
+  const count=+$("houseCount").value;
+  if(isFirstTurn()||!prop||prop.owner!==current||count<1||
+     prop.houses+count>5||p.money<count*s.hp)return;
+  const cost=count*s.hp;p.money-=cost;prop.houses+=count;
+  closeModal();resolved=true;render();
+  message("สร้างบ้านสำเร็จ",`ซื้อ ${count} หลัง จ่าย ${cost} เหรียญ ภาษีเมืองเพิ่ม ${count*s.houseTax} เหรียญ`);
+}
+function skipPurchase(){closeModal();resolved=true;render()}
+function payTax(amount,title){
+  const p=players[current];
+  if(p.shield){
+    p.shield--;resolved=true;render();
+    message("บัตรยกเว้นภาษี",`ยกเว้น ${title} ครั้งนี้`);return;
+  }
+  const paid=Math.min(p.money,amount);
+  p.money-=paid;resolved=true;render();
+  message(title,`จ่าย ${paid} เหรียญ`);
+}
+function drawQuestion(){
+  if(!questionDeck.length)questionDeck=shuffle(questions.map((_,i)=>i));
+  const source=questions[questionDeck.pop()];
+  const answers=shuffle(source.a.map((text,index)=>({text,correct:index===source.c})));
+  activeQuestion={...source,answers};
+  show(`<h2>📜 หยิบการ์ดคำถาม</h2><p>กดหยิบการ์ดเพื่อเปิดคำถาม</p>
+    <div style="font-size:4rem;text-align:center">🂠</div>
+    <button onclick="revealQuestion()">หยิบการ์ด</button>`);
+}
+function revealQuestion(){
+  if(!activeQuestion)return;
+  show(`<h2>📜 การ์ดคำถาม</h2><p><b>${esc(activeQuestion.q)}</b></p>
+    <div id="choices">${activeQuestion.answers.map((a,i)=>
+      `<button class="choice" onclick="answerQuestion(${i})">${esc(a.text)}</button>`).join("")}</div>
+    <div id="answerResult"></div>`);
+}
+function answerQuestion(index){
+  if(!activeQuestion||$("answerResult").dataset.done)return;
+  $("answerResult").dataset.done="1";
+  const selected=activeQuestion.answers[index];
+  document.querySelectorAll("#choices button").forEach((button,i)=>{
+    button.disabled=true;
+    if(activeQuestion.answers[i].correct)button.style.background="#3e8652";
+    else if(i===index)button.style.background="#a64d30";
+  });
+  const correct=selected.correct;
+  if(correct){players[current].score+=10;players[current].money+=5}
+  $("answerResult").innerHTML=`<div class="result">
+    ${correct?"✅ ตอบถูก ได้ 10 คะแนนและ 5 เหรียญ":"❌ ตอบไม่ถูก"}
+    <br><b>เฉลย:</b> ${esc(activeQuestion.e)}</div>
+    <button onclick="questionDone()">รับทราบ</button>`;
+  render();
+}
+function questionDone(){activeQuestion=null;closeModal();resolved=true;render()}
+function drawEvent(){
+  if(!eventDeck.length)eventDeck=shuffle(eventCards.map((_,i)=>i));
+  const card=eventCards[eventDeck.pop()],p=players[current];
+  if(card.money!==undefined){
+    p.money=Math.max(0,p.money+card.money);resolved=true;render();
+    message("การ์ดเหตุการณ์",`${card.text}<div class="result">${card.money>0?"+":""}${card.money} เหรียญ</div>`);
+  }else if(card.shield){
+    p.shield++;resolved=true;render();message("โบนัสพิเศษ 🛡️",card.text);
+  }else if(card.skip){
+    p.skipTurns++;resolved=true;render();message("การ์ดพักตา",card.text);
+  }
+}
+function endTurn(){
+  if(!resolved)return;
+  closeModal();
+  const p=players[current];
+  if(!p.skipActive)p.completedTurns++;
+  p.skipActive=false;
+  turnsTaken++;
+  if(roundLimit&&turnsTaken>=roundLimit*players.length){finishGame();return}
+  current=(current+1)%players.length;
+  rolled=false;resolved=false;lastRoll=0;pendingPosition=null;passedStartPending=false;
+  const next=players[current];
+  if(next.skipTurns>0){
+    next.skipTurns--;next.skipActive=true;resolved=true;render();
+    message("พักตาจริง ⏸️",`${next.name} ข้ามตานี้ ห้ามทอยและเดิน กด “ยืนยันข้ามตา” เพื่อส่งตาต่อ`);
+    return;
+  }
+  render();
+}
+function finishGame(){
+  if(!players.length)return;
+  const results=players.map((p,i)=>{
+    let assets=0;
+    for(const [index,property] of Object.entries(properties)){
+      if(property.owner===i)assets+=spaces[+index].price+property.houses*spaces[+index].hp;
+    }
+    return {p,assets,total:p.score+p.money+assets};
+  }).sort((a,b)=>b.total-a.total);
+  show(`<h2>🏆 สรุปคะแนน</h2>
+    <p>คะแนนรวม = คะแนนตอบคำถาม + เหรียญที่เหลือ + มูลค่าที่ดินและบ้าน</p>
+    ${results.map((x,i)=>`<div class="result">${i===0?"👑 ผู้ชนะ! ":""}${x.p.token} <b>${esc(x.p.name)}</b><br>
+      คำถาม ${x.p.score} + เงิน ${x.p.money} + ทรัพย์สิน ${x.assets} = <b>${x.total}</b></div>`).join("")}
+    <button onclick="closeModal()">ปิด</button>`);
+}
+function newGame(){if(confirm("เริ่มเกมใหม่และล้างข้อมูลเกมนี้หรือไม่?"))location.reload()}
+function show(html){$("modalBox").innerHTML=html;$("modal").classList.add("show")}
+function closeModal(){$("modal").classList.remove("show")}
+function message(title,text){show(`<h2>${title}</h2><p>${text}</p><button onclick="closeModal()">รับทราบ</button>`)}
+function showRules(){
+  show(`<h2>📘 วิธีเล่น</h2><ol>
+    <li>กรอกชื่อผู้เล่นทุกคนให้ครบ เลือกได้ 2–5 คน เริ่มคนละ 100 เหรียญ</li>
+    <li>ทอยลูกเต๋า ดูแต้มบนจอ เด็กเดินหมากจริง แล้วกด “เดินเสร็จแล้ว”</li>
+    <li>กระดานมี 36 ช่อง ผ่านจุดเริ่มต้นรับ 20 เหรียญ</li>
+    <li>ตาแรกของผู้เล่นแต่ละคนห้ามซื้อทั้งที่ดินและบ้าน เริ่มซื้อได้ตั้งแต่ตาถัดไป</li>
+    <li>ที่ดินแต่ละแห่งมีราคาซื้อ ภาษี และราคาบ้านต่างกัน บ้านสร้างได้สูงสุด 5 หลังต่อที่ดิน</li>
+    <li>บ้านแต่ละหลังเพิ่มภาษี ระบบหักจากผู้มาตกเมืองและโอนให้เจ้าของอัตโนมัติ</li>
+    <li>ตอบถูกได้ 10 คะแนนและ 5 เหรียญ พร้อมแสดงเฉลย</li>
+    <li>การ์ดเหตุการณ์มีโบนัส ค่าปรับ บัตรยกเว้นภาษี และการ์ดพักที่ข้ามตาถัดไปจริง</li>
+    <li>คะแนนสุดท้ายรวมคะแนนคำถาม เงินคงเหลือ และมูลค่าที่ดิน/บ้าน</li>
+  </ol><p class="help">ภาพตัวละครและสถานที่เป็นภาพวาด SVG ที่ฝังในไฟล์ ไม่ใช่ภาพ AI</p>
+  <button onclick="closeModal()">ปิด</button>`);
+}
+function showCharacters(){
+  show(`<h2>🎨 ตัวละครประกอบ</h2>
+    <p class="help">ภาพเป็นภาพวาดเวกเตอร์ที่สร้างด้วยโค้ด ไม่ใช่ภาพ AI หรือภาพจากต้นฉบับ</p>
+    <div class="row">
+      <div>${art("sam")}<b>สมิงพระราม</b></div>
+      <div>${art("kamani")}<b>กามะนี</b></div>
+      <div>${art("king")}<b>พระเจ้าฝรั่งมังฆ้อง</b></div>
+      <div>${art("china")}<b>พระเจ้ากรุงต้าฉิง</b></div>
+      <div>${art("envoy")}<b>โจเปียว</b></div>
+    </div><button onclick="closeModal()">ปิด</button>`);
+}
+function showContent(){
+  show(`<h2>📚 คลังเนื้อหาทบทวน 4 ส่วน</h2>
+  <div class="knowledge">
+  <h3>ส่วนที่ 1: ที่มาและความรู้พื้นฐาน</h3>
+  <ul>
+    <li>ราชาธิราชมีต้นกำเนิดจากพงศาวดารมอญ ต้นฉบับเดิมเป็นภาษามอญ ต่อมาแปลและเรียบเรียงเป็นภาษาไทย</li>
+    <li>รัชกาลที่ 1 โปรดเกล้าฯ ให้แปลและเรียบเรียง เจ้าพระยาพระคลัง (หน) เป็นผู้เรียบเรียงสำคัญ มีพระยาอินทรอัคคราช พระศรีภูริปรีชา และพระภิรมรัศมีร่วมงานตามข้อมูลที่ได้รับ</li>
+    <li>เจ้าพระยาพระคลัง (หน) เริ่มเป็นหลวงสรวิชิต ต่อมาเป็นนายด่านเมืองอุทัยธานี พระยาพิพัฒน์โกษา และเจ้าพระยาพระคลัง (หน) ถึงแก่อสัญกรรม พ.ศ. 2348</li>
+    <li>ผลงานที่ข้อมูลระบุ ได้แก่ สามก๊ก ร่ายยาวมหาเวสสันดรชาดก กัณฑ์กุมารและกัณฑ์มัทรี บทมโหรีเรื่องกากี ลิลิตเพชรมงกุฎ และอิเหนาคำฉันท์</li>
+    <li>ตอนสมิงพระรามอาสาเป็นร้อยแก้ว มีบรรยาย พรรณนาและบทสนทนา มีลักษณะเป็นนิทานอิงประวัติศาสตร์ ให้คติและความรู้</li>
+  </ul>
+  <h3>ส่วนที่ 2: เนื้อเรื่องและลำดับเหตุการณ์</h3>
+  <ul>
+    <li>พระเจ้ากรุงต้าฉิงแห่งจีนมีกามะนีเป็นทหารเอก ผู้เชี่ยวชาญขี่ม้าและแทงทวน แล้วยกทัพมายังกรุงรัตนปุระอังวะ</li>
+    <li>โจเปียวเป็นทูตนำพระราชสาส์นและเครื่องราชบรรณาการไปติดต่อพระเจ้าฝรั่งมังฆ้อง</li>
+    <li>เงื่อนไขคืออังวะแพ้ต้องยกเมืองให้จีน หากอังวะชนะจีนถอนทัพ และห้ามทำอันตรายผู้ไม่มีอาวุธ</li>
+    <li>สมิงพระรามเป็นเชลยชาวมอญ ลังเลเพราะผูกพันต่อพระเจ้าราชาธิราชแห่งหงสาวดี แต่รับอาสาเพราะห่วงว่าจีนจะยกทัพไปถึงบ้านเกิด</li>
+    <li>เขาขอม้าฝีเท้าดี สังเกตจุดอ่อนเกราะกามะนีระหว่างรำทวน แสร้งหนีให้ม้าคู่ต่อสู้อ่อนแรง แล้วกลับมาโจมตี</li>
+    <li>กามะนีเสียชีวิต พระเจ้ากรุงต้าฉิงรักษาคำมั่นถอนทัพ ส่วนพระเจ้าฝรั่งมังฆ้องให้รางวัล</li>
+  </ul>
+  <h3>ส่วนที่ 3: ตัวละคร ฉาก และสิ่งของ</h3>
+  <ul>
+    <li>สมิงพระราม: กล้าหาญ รอบคอบ มีไหวพริบและห่วงใยบ้านเกิด; กามะนี: ทหารเอกจีน เก่งขี่ม้าและใช้ทวน</li>
+    <li>พระเจ้าฝรั่งมังฆ้องเป็นกษัตริย์อังวะ; พระเจ้ากรุงต้าฉิงเป็นกษัตริย์จีน; โจเปียวเป็นทูตและพูดภาษาพม่าได้</li>
+    <li>สถานที่สำคัญคือกรุงจีน กรุงรัตนปุระอังวะ และกรุงหงสาวดี สิ่งของสำคัญคือม้า ทวน กระบี่ ชุดเกราะ พระราชสาส์น เครื่องราชบรรณาการ ขอเหล็กและตะกรวย</li>
+  </ul>
+  <h3>ส่วนที่ 4: คุณค่าและข้อคิด</h3>
+  <ul>
+    <li>ด้านเนื้อหา: ยกย่องความสามารถ การรักษาคำสัตย์ สติปัญญา ความรอบคอบ และการไม่ประมาท</li>
+    <li>ด้านวรรณศิลป์: ใช้อุปมาเปรียบกองทัพกับฝนหนักและกระแสน้ำเชี่ยว ข้อความ “เรารักสัตย์ยิ่งกว่าทรัพย์...” สื่อว่าคำสัตย์มีค่าสูง</li>
+    <li>ด้านสังคม: สะท้อนฤกษ์ยาม บทบาททูต เครื่องราชบรรณาการ ความจงรักภักดี และการรักษาสัญญา</li>
+    <li>ข้อคิดหลัก: ใช้สติปัญญา ไหวพริบและความรอบคอบควบคู่ความสามารถ</li>
+  </ul>
+  <p class="help"><b>หมายเหตุ:</b> รายละเอียดรางวัลในข้อมูลที่ได้รับมีสองแบบ—ประกาศกล่าวถึงทรัพย์สมบัติครึ่งหนึ่ง ส่วนสรุปกล่าวถึงพระราชธิดา จึงควรตรวจเทียบเอกสารการสอนฉบับจริง</p>
+  </div><button onclick="closeModal()">ปิด</button>`);
+}
+</script>
+</body>
+</html>
